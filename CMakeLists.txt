@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(megamario LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
@@ -10,8 +13,27 @@ FetchContent_Declare(SFML
     GIT_TAG 2.6.x)
 FetchContent_MakeAvailable(SFML)
 
+FetchContent_Declare(googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG b10fad38c4026a29ea6561ab15fc4818170d1c10
+    GIT_SHALLOW TRUE
+)
+if (WIN32)
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+endif()
+FetchContent_MakeAvailable(googletest)
+
+set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+enable_testing()
+
+add_subdirectory(src)
+add_subdirectory(tests)
+
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 add_executable(megamario ${SOURCES})
+
+target_include_directories(megamario PRIVATE ${SOURCE_DIR})
 target_link_libraries(megamario PRIVATE sfml-graphics)
 target_compile_features(megamario PRIVATE cxx_std_17)
 
