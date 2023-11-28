@@ -1,4 +1,5 @@
 #include "Scene_Play.hpp"
+#include "Scene_Menu.hpp"
 #include "Physics.hpp"
 #include "Assets.hpp"
 #include "GameEngine.hpp"
@@ -72,6 +73,7 @@ void Scene_Play::loadLevel(const std::string &filename)
     // IMPORTANT: always add the CAnimation component first so that gridToMidPixel works
     brick->addComponent<CAnimation>(m_game.assets().animation("Brick"), true);
     brick->addComponent<CTransform>(Vec2(96, 480));
+    brick->getComponent<CTransform>().scale = Vec2(2, 2);
     // NOte:: Your final code should position the entity with the grid x,y position read from the file:
     // brick->addComponent<CTransform>(gridToMidPixel(gridX, gridY, brick));
 
@@ -83,12 +85,16 @@ void Scene_Play::loadLevel(const std::string &filename)
     auto block = m_entityManager.addEntity("tile");
     block->addComponent<CAnimation>(m_game.assets().animation("Block"), true);
     block->addComponent<CTransform>(Vec2(224, 480));
+    block->getComponent<CTransform>().scale = Vec2(0.5f, 0.5f);
     // add a bounding box, this will now show up if we press the C key
-    block->addComponent<CBoundingBox>(m_game.assets().animation("Block").size());
+    Vec2 animationSize = m_game.assets().animation("Block").size();
+    Vec2 scale = block->getComponent<CTransform>().scale;
+    block->addComponent<CBoundingBox>(Vec2(animationSize.x * scale.x, animationSize.y * scale.y));
 
     auto question = m_entityManager.addEntity("tile");
-    block->addComponent<CAnimation>(m_game.assets().animation("Question"), true);
-    block->addComponent<CTransform>(Vec2(352, 480));
+    question->addComponent<CAnimation>(m_game.assets().animation("Question"), true);
+    question->addComponent<CTransform>(Vec2(352, 480));
+    question->getComponent<CTransform>().scale = Vec2(2.0f, 2.0f);
 
     // NOTE: THIS IS INCREDIBLY IMPORTANT PLEASE READ THIS EXAMPLE
     //       Components are now returned as references rather than pointers
@@ -96,10 +102,10 @@ void Scene_Play::loadLevel(const std::string &filename)
     //       Here is an example:
     //
     //       This will COPY the transform into the variable 'transform1' - it is INCORRECT
-    //       auto transform1 = entity->get<CTransform>();
+    //       auto transform1 = entity->getComponent<CTransform>();
     //
     //       This will REFERENCE the transform into the variable 'transform2' - it is CORRECT
-    //       auto& transform2 = entity->get<CTransform>();
+    //       auto& transform2 = entity->getComponent<CTransform>();
 }
 
 void Scene_Play::spawnPlayer()
@@ -108,6 +114,7 @@ void Scene_Play::spawnPlayer()
     m_player = m_entityManager.addEntity("player");
     m_player->addComponent<CAnimation>(m_game.assets().animation("Stand"), true);
     m_player->addComponent<CTransform>(Vec2(224, 352));
+    m_player->getComponent<CTransform>().scale = Vec2(0.75, 0.75);
     m_player->addComponent<CBoundingBox>(Vec2(48, 48));
     m_player->addComponent<CGravity>(0.1);
 
@@ -135,20 +142,20 @@ void Scene_Play::update()
 void Scene_Play::sMovement()
 {
     // TODO: Implement player movement / jumping based on its CInput component
-    Vec2 playerVelocity{0, m_player->getComponent<CTransform>().velocity.y};
+    // Vec2 playerVelocity{0, m_player->getComponent<CTransform>().velocity.y};
 
-    if (m_player->getComponent<CInput>().up)
-    {
-        playerVelocity.y = -3;
-    }
+    // // if (m_player->getComponent<CInput>().up)
+    // // {
+    // //     playerVelocity.y = -3;
+    // // }
 
-    m_player->getComponent<CTransform>().velocity = playerVelocity;
+    // m_player->getComponent<CTransform>().velocity = playerVelocity;
 
     for (auto e : m_entityManager.getEntities())
     {
         if (e->hasComponent<CGravity>())
         {
-            e->getComponent<CTransform>().velocity.y += e->getComponent<CGravity>().gravity;
+            // e->getComponent<CTransform>().velocity.y += e->getComponent<CGravity>().gravity;
             // if player is moving faster than max speed, set it to max speed
         }
 
@@ -260,6 +267,7 @@ void Scene_Play::sAnimation()
 };
 
 void Scene_Play::onEnd(){
+    m_game.changeScene("MENU", std::make_shared<Scene_Menu>(m_game));
     // TODO: When the scene ends, change back to the MENU scene
     //       use m_game.changeScene(correct params);
 };
@@ -267,15 +275,17 @@ void Scene_Play::onEnd(){
 void Scene_Play::sRender()
 {
     // color the background darker so you know when the game is paused
-    if (!m_paused)
-    {
-        m_game.window().clear(sf::Color(100, 100, 255));
-    }
-    else
-    {
-        m_game.window().clear(sf::Color(50, 50, 100));
-    }
+    // if (!m_paused)
+    // {
+    //     m_game.window().clear(sf::Color(100, 100, 255));
+    // }
+    // else
+    // {
+    //     m_game.window().clear(sf::Color(50, 50, 100));
+    // }
+
     m_game.window().clear(sf::Color(0x47, 0x93, 0xcd));
+
     // set the viewport of the window to be centered on the player if it's far enough right
     auto &playerPosition = m_player->getComponent<CTransform>().pos;
     sf::View view = m_game.window().getView();
@@ -334,7 +344,7 @@ void Scene_Play::sRender()
             drawLine(Vec2(x, 0), Vec2(x, height()));
         }
 
-        for (float y = 0; y < height(); y += m_gridSize.y)
+        for (float y = 0; y <= height(); y += m_gridSize.y)
         {
             drawLine(Vec2(leftX, height() - y), Vec2(rightX, height() - y));
 
@@ -342,9 +352,12 @@ void Scene_Play::sRender()
             {
                 std::string xCell = std::to_string((int)x / (int)m_gridSize.x);
                 std::string yCell = std::to_string((int)y / (int)m_gridSize.y);
+                size_t previousSize = m_gridText.getCharacterSize();
+                m_gridText.setCharacterSize(6);
                 m_gridText.setString("(" + xCell + "," + yCell + ")");
-                m_gridText.setPosition(x + 3, height() - y + 2);
+                m_gridText.setPosition(x + 2, height() - y + 4);
                 m_game.window().draw(m_gridText);
+                m_gridText.setCharacterSize(previousSize);
             }
         }
     }
