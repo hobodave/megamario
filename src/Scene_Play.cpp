@@ -229,19 +229,42 @@ void Scene_Play::sLifespan()
 
 void Scene_Play::sCollision()
 {
-    // REMEMBER: SFML's (0,) position is the TOP-LEFT corner of the screen
-    //           This means jumping will have a negative y-component
-    //           Gravity will have a positive y-component
-    //           Also, something BELOW something else will have a y value GREATER than the other
-    //           Also, something ABOVE something else will have a y value LESS than the other
-
-    // TODO: Implement Physics::GetOverlap(), use it inside this function
-
     // TODO: Implment bullet / tile collisions
     //       Destroy the tile if it has a Brick animation
-    // TODO: Implement player / tile collisions and resolutions
-    //       Update the CState component of the player to store whether
-    //       it is on the ground or not. This will be used by the Animation system
+
+    for (auto bullet : m_entityManager.getEntities("bullet"))
+    {
+        // assume CBoundingBox exists
+        auto& bulletBox = bullet->getComponent<CBoundingBox>();
+        auto& bulletTransform = bullet->getComponent<CTransform>();
+
+        // Check all tiles for collision
+        for (auto tile : m_entityManager.getEntities("tile"))
+        {
+            if (!tile->hasComponent<CBoundingBox>())
+            {
+                continue;
+            }
+
+            auto& tileBox = bullet->getComponent<CBoundingBox>();
+            auto& tileTransform = bullet->getComponent<CTransform>();
+
+            Vec2 overlap = Physics::GetOverlap(bullet, tile);
+
+            if (overlap.x <= 0 || overlap.y <= 0)
+            {
+                continue;
+            }
+
+            // Bullet overlaps with tile and we don't care how, destroy it and possibly the tile if it's a brick
+            bullet->destroy();
+
+            if (tile->getComponent<CAnimation>().animation.name() == "Brick")
+            {
+                tile->destroy();
+            }
+        }
+    }
 
     for (auto e : m_entityManager.getEntities("tile"))
     {
@@ -419,16 +442,14 @@ void Scene_Play::onEnd()
 void Scene_Play::sRender()
 {
     // color the background darker so you know when the game is paused
-    // if (!m_paused)
-    // {
-    //     m_game.window().clear(sf::Color(100, 100, 255));
-    // }
-    // else
-    // {
-    //     m_game.window().clear(sf::Color(50, 50, 100));
-    // }
-
-    m_game.window().clear(sf::Color(0x47, 0x93, 0xcd));
+    if (!m_paused)
+    {
+        m_game.window().clear(sf::Color(107, 135, 255));
+    }
+    else
+    {
+        m_game.window().clear(sf::Color(75, 75, 255));
+    }
 
     // set the viewport of the window to be centered on the player if it's far enough right
     auto &playerPosition = m_player->getComponent<CTransform>().pos;
@@ -504,6 +525,20 @@ void Scene_Play::sRender()
                 m_gridText.setCharacterSize(previousSize);
             }
         }
+    }
+
+    // Draw PAUSED if paused
+    if (m_paused)
+    {
+        size_t previousSize = m_gridText.getCharacterSize();
+        m_gridText.setCharacterSize(36);
+        m_gridText.setString("PAUSED");
+        sf::FloatRect textRect = m_gridText.getLocalBounds();
+        m_gridText.setOrigin(textRect.left + textRect.width/2.0f,
+                textRect.top  + textRect.height/2.0f);
+        m_gridText.setPosition(width() / 2.0, height() / 2.0);
+        m_game.window().draw(m_gridText);
+        m_gridText.setCharacterSize(previousSize);
     }
 
     m_game.window().display();
