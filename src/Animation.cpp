@@ -27,11 +27,16 @@ Animation::Animation(const std::string &name, const sf::Texture &texture, size_t
 // animation loops when it reaches the end
 void Animation::update()
 {
-    // add the speed variable to the current frame
+    if (m_speed == 0)
+        return;
+
     m_currentFrame++;
 
-    // TODO: 1) calculate the correct frame of animation to play based on currentFrame and speed
-    //       2) set the texture rect of the sprite to the correct frame
+    // Increment the current frame if it has been displayed for m_speed frames
+    int cycle = (int)m_currentFrame / m_speed;
+    int frame = cycle % m_frameCount;
+
+    m_sprite.setTextureRect(sf::IntRect(frame * m_size.x, 0, m_size.x, m_size.y));
 }
 
 const Vec2 &Animation::size() const

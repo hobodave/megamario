@@ -312,7 +312,15 @@ void Scene_Play::sCollision()
                     // set player to be on top of tile
                     playerTransform.pos.y -= overlap.y;
                     playerTransform.velocity.y = 0;
-                    m_player->getComponent<CState>().state = "ground";
+                    if (playerTransform.velocity.x == 0)
+                    {
+                        m_player->getComponent<CState>().state = "ground";
+                    }
+                    else
+                    {
+                        m_player->getComponent<CState>().state = "run";
+                    }
+
                     m_player->getComponent<CInput>().canJump = true;
                 }
                 // if player is below tile
@@ -360,10 +368,12 @@ void Scene_Play::sDoAction(const Action &action)
         else if (action.name() == "LEFT")
         {
             playerInput.left = true;
+            m_player->getComponent<CState>().state = "run";
         }
         else if (action.name() == "RIGHT")
         {
             playerInput.right = true;
+            m_player->getComponent<CState>().state = "run";
         }
         else if (action.name() == "UP")
         {
@@ -424,11 +434,28 @@ void Scene_Play::sAnimation()
     {
         m_player->addComponent<CAnimation>(m_game.assets().animation("Air"), true);
     }
+    else if (m_player->getComponent<CState>().state == "run")
+    {
+        if (m_player->getComponent<CAnimation>().animation.name() != "Run")
+        {
+            m_player->addComponent<CAnimation>(m_game.assets().animation("Run"), true);
+        }
+    }
     else if (m_player->getComponent<CState>().state == "ground")
     {
         m_player->addComponent<CAnimation>(m_game.assets().animation("Stand"), true);
     }
 
+    for (auto e : m_entityManager.getEntities())
+    {
+        if (!e->hasComponent<CAnimation>())
+        {
+            continue;
+        }
+
+        auto& animation = e->getComponent<CAnimation>().animation;
+        animation.update();
+    }
     // TODO: set the animation of the player based on its CState component
     // TODO: for each entity with an animation, call entity->getComponent<CAnimation>().animation.update()
     //       if the animation is not repeated, and it has ended, destroy the entity
