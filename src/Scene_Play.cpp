@@ -36,6 +36,7 @@ void Scene_Play::init(const std::string &levelPath)
     registerAction(sf::Keyboard::Down, "DOWN");
     registerAction(sf::Keyboard::S, "DOWN");
 
+    registerAction(sf::Keyboard::Space, "SHOOT");
     // TODO: Register all other gameplay Actions
 
     m_gridText.setCharacterSize(12);
@@ -130,6 +131,7 @@ void Scene_Play::spawnPlayer()
     m_player = m_entityManager.addEntity("player");
     m_player->addComponent<CAnimation>(m_game.assets().animation("Stand"), true);
     m_player->addComponent<CTransform>(gridToMidPixel(m_playerConfig.X, m_playerConfig.Y, m_player));
+    // m_player->getComponent<CTransform>().scale = Vec2(0.75f, 0.75f);
     m_player->addComponent<CBoundingBox>(Vec2(m_playerConfig.CX, m_playerConfig.CY));
     m_player->addComponent<CGravity>(m_playerConfig.GRAVITY);
     m_player->addComponent<CInput>();
@@ -139,11 +141,20 @@ void Scene_Play::spawnPlayer()
 void Scene_Play::spawnBullet(std::shared_ptr<Entity> entity)
 {
     // TODO: this should spawn a bullet at the given entity, going in the direction the entity is facing
+    auto bullet = m_entityManager.addEntity("bullet");
+    float bulletDirection = entity->getComponent<CTransform>().scale.x < 0 ? -1.0f : 1.0f;
+    Vec2 bulletVelocity = Vec2(bulletDirection * 10.0f, 0.0f);
+
+    bullet->addComponent<CAnimation>(m_game.assets().animation(m_playerConfig.WEAPON), true);
+    bullet->addComponent<CTransform>(entity->getComponent<CTransform>().pos, bulletVelocity);
+    bullet->addComponent<CBoundingBox>(Vec2(16, 12));
+    bullet->addComponent<CLifespan>(180, m_currentFrame);
 }
 
 void Scene_Play::update()
 {
     m_entityManager.update();
+    m_currentFrame++;
 
     // TODO: implement pause functionality
 
@@ -195,14 +206,23 @@ void Scene_Play::sMovement()
 
         entityTransform.pos += entityTransform.velocity;
     }
-
-    // TODO: Implement the maximum player speed in both X and Y directions
-    // NOTE: Setting an entity's scale.x to -1/1 will make it face left/right
 }
 
 void Scene_Play::sLifespan()
 {
-    // TODO: Check lifespan of entities that have them, and destroy them if they go over
+    // Check for entities with a CLifespan component and destroy them if they are too old
+    for (auto e : m_entityManager.getEntities())
+    {
+        if (e->hasComponent<CLifespan>())
+        {
+            auto& lifespan = e->getComponent<CLifespan>();
+
+            if (m_currentFrame - lifespan.frameCreated >= lifespan.lifespan)
+            {
+                e->destroy();
+            }
+        }
+    }
 }
 
 void Scene_Play::sCollision()
@@ -335,6 +355,15 @@ void Scene_Play::sDoAction(const Action &action)
         {
             playerInput.down = true;
         }
+        else if (action.name() == "SHOOT")
+        {
+            if (playerInput.canShoot)
+            {
+                playerInput.shoot = true;
+                playerInput.canShoot = false;
+                spawnBullet(m_player); // Does this belong here or in sMovement?
+            }
+        }
     }
     else if (action.type() == "END")
     {
@@ -353,6 +382,11 @@ void Scene_Play::sDoAction(const Action &action)
         else if (action.name() == "RIGHT")
         {
             playerInput.right = false;
+        }
+        else if (action.name() == "SHOOT")
+        {
+            playerInput.shoot = false;
+            playerInput.canShoot = true;
         }
     }
 }
