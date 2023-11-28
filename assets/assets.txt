@@ -23,7 +23,7 @@ Texture     TexFlag     images/mario/flag.png
 Animation   Stand       TexStand    1   0
 Animation   Run         TexRun      4  10
 Animation   Air         TexAir      1   0
-Animation   bullet      TexBullet   1   0
+Animation   Bullet      TexBullet   1   0
 Animation   Buster      TexBuster   1   0
 Animation   Explosion   TexExplode 48   2
 Animation   Coin        TexCoin     6   5
