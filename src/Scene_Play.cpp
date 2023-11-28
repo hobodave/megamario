@@ -260,31 +260,24 @@ void Scene_Play::sCollision()
             if (tile->getComponent<CAnimation>().animation.name() == "Brick")
             {
                 tile->removeComponent<CBoundingBox>();
-                tile->addComponent<CAnimation>(m_game.assets().animation("Explosion"), true);
+                tile->addComponent<CAnimation>(m_game.assets().animation("Explosion"), false);
                 tile->addComponent<CState>("dead");
             }
         }
     }
 
+    auto& playerTransform = m_player->getComponent<CTransform>();
+
+    // Check for player-tile collisions
     for (auto e : m_entityManager.getEntities("tile"))
     {
-        // Check for dead entities first
-        if (e->hasComponent<CState>() && e->getComponent<CState>().state == "dead")
-        {
-            if (e->getComponent<CAnimation>().animation.hasEnded())
-            {
-                e->destroy();
-            }
-            continue;
-        }
-
+        // Ignore decorative non-colliding tiles
         if (e->hasComponent<CBoundingBox>())
         {
             auto& tileBox = e->getComponent<CBoundingBox>();
             auto& tileTransform = e->getComponent<CTransform>();
 
             auto& playerBox = m_player->getComponent<CBoundingBox>();
-            auto& playerTransform = m_player->getComponent<CTransform>();
 
             Vec2 overlap = Physics::GetOverlap(m_player, e);
 
@@ -294,7 +287,6 @@ void Scene_Play::sCollision()
             }
 
             Vec2 prevOverlap = Physics::GetPreviousOverlap(m_player, e);
-
 
             // Check for x-axis collision
             if (overlap.x > 0)
@@ -344,9 +336,18 @@ void Scene_Play::sCollision()
         }
     }
 
+    // Prevent player from going off the left side of the screen
+    if (playerTransform.pos.x < 32.0f)
+    {
+        playerTransform.pos.x = 32.0f;
+    }
 
-    // TODO: Check to see if the player has fallen down a hole (y > height())
-    // TODO: Don't let the player walk off the left side of the map
+    // Respawn player if they fall off the bottom of the screen
+    if (playerTransform.pos.y > height())
+    {
+        m_player->destroy();
+        spawnPlayer();
+    }
 }
 
 void Scene_Play::sDoAction(const Action &action)
@@ -438,8 +439,6 @@ void Scene_Play::sDoAction(const Action &action)
 
 void Scene_Play::sAnimation()
 {
-    // TODO: Complete Animation class code first
-
     if (m_player->getComponent<CState>().state == "air")
     {
         m_player->addComponent<CAnimation>(m_game.assets().animation("Air"), true);
@@ -463,12 +462,14 @@ void Scene_Play::sAnimation()
             continue;
         }
 
-        auto& animation = e->getComponent<CAnimation>().animation;
-        animation.update();
+        auto& animationComponent = e->getComponent<CAnimation>();
+        animationComponent.animation.update();
+
+        if (!animationComponent.repeat && animationComponent.animation.hasEnded())
+        {
+            e->destroy();
+        }
     }
-    // TODO: set the animation of the player based on its CState component
-    // TODO: for each entity with an animation, call entity->getComponent<CAnimation>().animation.update()
-    //       if the animation is not repeated, and it has ended, destroy the entity
 };
 
 void Scene_Play::onEnd()
