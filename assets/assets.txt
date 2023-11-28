@@ -7,7 +7,7 @@ Texture     TexBuster   images/megaman/buster.png
 Texture     TexExplode  images/misc/explosion128.png
 Texture     TexCoin     images/misc/coinspin.png
 Texture     TexBrick    images/mario/brick.png
-Texture     TexQ        images/mario/question.png
+Texture     TexQ        images/mario/qfade.png
 Texture     TexQ2       images/mario/question2.png
 Texture     TexPipeS    images/mario/pipesmall.png
 Texture     TexPipeT    images/mario/pipetall.png
@@ -27,7 +27,7 @@ Animation   Bullet      TexBullet   1   0
 Animation   Buster      TexBuster   1   0
 Animation   Explosion   TexExplode 10   4
 Animation   Coin        TexCoin     6   5
-Animation   Question    TexQ        1   0
+Animation   Question    TexQ        4   12
 Animation   Brick       TexBrick    1   0
 Animation   Question2   TexQ2       1   0
 Animation   PipeTall    TexPipeT    1   0
