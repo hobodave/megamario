@@ -57,7 +57,7 @@ const sf::Texture & Assets::texture(const std::string & name) const
     if (m_textures.find(name) == m_textures.end())
     {
         std::cerr << "Texture not found: " << name << std::endl;
-        return sf::Texture();
+        return m_textures.at("Missing");
     }
 
     return m_textures.at(name);
