@@ -32,3 +32,4 @@ Tile Question   8 9
 Tile PipeSmall 15 1
 Tile CloudSmall 2 7
 Tile CloudBig  13 8
+Player 3 1 48 64 5 6 6 0.2 Buster

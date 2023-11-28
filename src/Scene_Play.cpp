@@ -79,49 +79,39 @@ void Scene_Play::loadLevel(const std::string &filename)
             auto tile = m_entityManager.addEntity("tile");
             tile->addComponent<CAnimation>(m_game.assets().animation(name), true);
             tile->addComponent<CTransform>(gridToMidPixel(gridX, gridY, tile));
+
+            if (name == "Ground" || name == "Brick" || name == "Question")
+            {
+                tile->addComponent<CBoundingBox>(Vec2(64, 64));
+            }
+            else if (name == "PipeSmall")
+            {
+                tile->addComponent<CBoundingBox>(Vec2(128, 138));
+            }
         }
         else if (directive == "Player")
         {
+            float gridX, gridY, boxW, boxH, speedX, speedY, speedMax, gravity;
+            std::string bulletAnimation;
 
+            file >> gridX >> gridY
+                 >> boxW >> boxH
+                 >> speedX >> speedY >> speedMax
+                 >> gravity >> bulletAnimation;
+
+            m_playerConfig.X = gridX;
+            m_playerConfig.Y = gridY;
+            m_playerConfig.CX = boxW;
+            m_playerConfig.CY = boxH;
+            m_playerConfig.SPEED = speedX;
+            m_playerConfig.MAXSPEED = speedMax;
+            m_playerConfig.JUMP = speedY;
+            m_playerConfig.GRAVITY = gravity;
+            m_playerConfig.WEAPON = bulletAnimation;
+
+            spawnPlayer();
         }
     }
-
-    // TODO: read in the level file and add the appropriate entities
-    //       use the PlayerConfig struct m_playerConfig to store player properties
-    //       this struct is defined at the top of Scene_Play.hpp
-
-    // NOTE: all of the code below is sample code which shows you how to
-    //       set up and use entities with the new syntax, it should be removed
-
-    spawnPlayer();
-
-    // // some sample entities
-    // auto brick = m_entityManager.addEntity("tile");
-    // // IMPORTANT: always add the CAnimation component first so that gridToMidPixel works
-    // brick->addComponent<CAnimation>(m_game.assets().animation("Brick"), true);
-    // brick->addComponent<CTransform>(Vec2(96, 480));
-    // brick->getComponent<CTransform>().scale = Vec2(2, 2);
-    // // NOte:: Your final code should position the entity with the grid x,y position read from the file:
-    // // brick->addComponent<CTransform>(gridToMidPixel(gridX, gridY, brick));
-
-    // if (brick->getComponent<CAnimation>().animation.name() == "Brick")
-    // {
-    //     std::cout << "This could be a good way of identifying if a tile is a brick!\n";
-    // }
-
-    // auto block = m_entityManager.addEntity("tile");
-    // block->addComponent<CAnimation>(m_game.assets().animation("Block"), true);
-    // block->addComponent<CTransform>(Vec2(224, 480));
-    // block->getComponent<CTransform>().scale = Vec2(0.5f, 0.5f);
-    // // add a bounding box, this will now show up if we press the C key
-    // Vec2 animationSize = m_game.assets().animation("Block").size();
-    // Vec2 scale = block->getComponent<CTransform>().scale;
-    // block->addComponent<CBoundingBox>(Vec2(animationSize.x * scale.x, animationSize.y * scale.y));
-
-    // auto question = m_entityManager.addEntity("tile");
-    // question->addComponent<CAnimation>(m_game.assets().animation("Question"), true);
-    // question->addComponent<CTransform>(Vec2(352, 480));
-    // question->getComponent<CTransform>().scale = Vec2(2.0f, 2.0f);
 
     // NOTE: THIS IS INCREDIBLY IMPORTANT PLEASE READ THIS EXAMPLE
     //       Components are now returned as references rather than pointers
@@ -137,15 +127,13 @@ void Scene_Play::loadLevel(const std::string &filename)
 
 void Scene_Play::spawnPlayer()
 {
-    // here is a sample player entity which you can use to construct other entities
     m_player = m_entityManager.addEntity("player");
     m_player->addComponent<CAnimation>(m_game.assets().animation("Stand"), true);
-    m_player->addComponent<CTransform>(Vec2(224, 352));
-    m_player->getComponent<CTransform>().scale = Vec2(0.75, 0.75);
-    m_player->addComponent<CBoundingBox>(Vec2(48, 48));
-    m_player->addComponent<CGravity>(0.1);
-
-    // TODO: be sure to add the remaining components to the player
+    m_player->addComponent<CTransform>(gridToMidPixel(m_playerConfig.X, m_playerConfig.Y, m_player));
+    m_player->addComponent<CBoundingBox>(Vec2(m_playerConfig.CX, m_playerConfig.CY));
+    m_player->addComponent<CGravity>(m_playerConfig.GRAVITY);
+    m_player->addComponent<CInput>();
+    m_player->addComponent<CState>("ground");
 }
 
 void Scene_Play::spawnBullet(std::shared_ptr<Entity> entity)
@@ -168,27 +156,46 @@ void Scene_Play::update()
 
 void Scene_Play::sMovement()
 {
-    // TODO: Implement player movement / jumping based on its CInput component
-    // Vec2 playerVelocity{0, m_player->getComponent<CTransform>().velocity.y};
-
-    // // if (m_player->getComponent<CInput>().up)
-    // // {
-    // //     playerVelocity.y = -3;
-    // // }
-
-    // m_player->getComponent<CTransform>().velocity = playerVelocity;
+    auto& playerTransform = m_player->getComponent<CTransform>();
+    playerTransform.velocity.x = 0;
 
     for (auto e : m_entityManager.getEntities())
     {
-        if (e->hasComponent<CGravity>())
+        auto& entityTransform = e->getComponent<CTransform>();
+        entityTransform.prevPos = entityTransform.pos;
+
+        if (e->hasComponent<CInput>())
         {
-            // e->getComponent<CTransform>().velocity.y += e->getComponent<CGravity>().gravity;
-            // if player is moving faster than max speed, set it to max speed
+            auto& input = e->getComponent<CInput>();
+
+            if (input.left)
+            {
+                entityTransform.velocity.x -= m_playerConfig.SPEED;
+                entityTransform.scale.x = -1;
+            }
+            else if (input.right)
+            {
+                entityTransform.velocity.x += m_playerConfig.SPEED;
+                entityTransform.scale.x = 1;
+            }
+            else if (input.up)
+            {
+                entityTransform.velocity.y -= m_playerConfig.JUMP;
+            }
         }
 
-        e->getComponent<CTransform>().pos += e->getComponent<CTransform>().velocity;
+        if (e->hasComponent<CGravity>())
+        {
+            entityTransform.velocity.y += e->getComponent<CGravity>().gravity;
+        }
+
+        // Enforce speed limits
+        entityTransform.velocity.x = std::max(-m_playerConfig.MAXSPEED, std::min(m_playerConfig.MAXSPEED, entityTransform.velocity.x));
+        entityTransform.velocity.y = std::max(-m_playerConfig.MAXSPEED, std::min(m_playerConfig.MAXSPEED, entityTransform.velocity.y));
+
+        entityTransform.pos += entityTransform.velocity;
     }
-    // TODO: Implement gravity's effect on the player
+
     // TODO: Implement the maximum player speed in both X and Y directions
     // NOTE: Setting an entity's scale.x to -1/1 will make it face left/right
 }
@@ -213,12 +220,76 @@ void Scene_Play::sCollision()
     // TODO: Implement player / tile collisions and resolutions
     //       Update the CState component of the player to store whether
     //       it is on the ground or not. This will be used by the Animation system
+
+    for (auto e : m_entityManager.getEntities("tile"))
+    {
+        if (e->hasComponent<CBoundingBox>())
+        {
+            auto& tileBox = e->getComponent<CBoundingBox>();
+            auto& tileTransform = e->getComponent<CTransform>();
+
+            auto& playerBox = m_player->getComponent<CBoundingBox>();
+            auto& playerTransform = m_player->getComponent<CTransform>();
+
+            Vec2 overlap = Physics::GetOverlap(m_player, e);
+
+            if (overlap.x <= 0 || overlap.y <= 0)
+            {
+                continue;
+            }
+
+            Vec2 prevOverlap = Physics::GetPreviousOverlap(m_player, e);
+
+
+            // Check for x-axis collision
+            if (overlap.x > 0)
+            {
+                // if player is to the left of tile
+                if (prevOverlap.y > 0 && playerTransform.pos.x < tileTransform.pos.x)
+                {
+                    // set player to be to the left of tile
+                    playerTransform.pos.x -= overlap.x;
+                }
+                // if player is to the right of tile
+                else if (prevOverlap.y > 0 && playerTransform.pos.x > tileTransform.pos.x)
+                {
+                    // set player to be to the right of tile
+                    playerTransform.pos.x += overlap.x;
+                }
+            }
+
+            // Check for y-axis collision
+            if (overlap.y > 0)
+            {
+                // if player is above tile
+                if (prevOverlap.x > 0 && playerTransform.pos.y < tileTransform.pos.y)
+                {
+                    // set player to be on top of tile
+                    playerTransform.pos.y -= overlap.y;
+                    playerTransform.velocity.y = 0;
+                    m_player->getComponent<CState>().state = "ground";
+                    m_player->getComponent<CInput>().canJump = true;
+                }
+                // if player is below tile
+                else if (prevOverlap.x > 0 && playerTransform.pos.y > tileTransform.pos.y)
+                {
+                    // set player to be below tile
+                    playerTransform.pos.y += overlap.y;
+                    playerTransform.velocity.y = 0;
+                }
+            }
+        }
+    }
+
+
     // TODO: Check to see if the player has fallen down a hole (y > height())
     // TODO: Don't let the player walk off the left side of the map
 }
 
 void Scene_Play::sDoAction(const Action &action)
 {
+    auto& playerInput = m_player->getComponent<CInput>();
+
     if (action.type() == "START")
     {
         if (action.name() == "TOGGLE_TEXTURES")
@@ -243,38 +314,45 @@ void Scene_Play::sDoAction(const Action &action)
         }
         else if (action.name() == "LEFT")
         {
-            m_player->getComponent<CInput>().left = true;
+            playerInput.left = true;
         }
         else if (action.name() == "RIGHT")
         {
-            m_player->getComponent<CInput>().right = true;
+            playerInput.right = true;
         }
         else if (action.name() == "UP")
         {
-            m_player->getComponent<CInput>().up = true;
+            if (playerInput.canJump)
+            {
+                playerInput.up = true;
+                playerInput.canJump = false;
+                m_player->getComponent<CState>().state = "air";
+            } else {
+                playerInput.up = false;
+            }
         }
         else if (action.name() == "DOWN")
         {
-            m_player->getComponent<CInput>().down = true;
+            playerInput.down = true;
         }
     }
     else if (action.type() == "END")
     {
         if (action.name() == "UP")
         {
-            m_player->getComponent<CInput>().up = false;
+            playerInput.up = false;
         }
         else if (action.name() == "DOWN")
         {
-            m_player->getComponent<CInput>().down = false;
+            playerInput.down = false;
         }
         else if (action.name() == "LEFT")
         {
-            m_player->getComponent<CInput>().left = false;
+            playerInput.left = false;
         }
         else if (action.name() == "RIGHT")
         {
-            m_player->getComponent<CInput>().right = false;
+            playerInput.right = false;
         }
     }
 }
@@ -285,7 +363,11 @@ void Scene_Play::sAnimation()
 
     if (m_player->getComponent<CState>().state == "air")
     {
-        // m_player->addComponent<CAnimation>(m_game.assets().animation("Air"));
+        m_player->addComponent<CAnimation>(m_game.assets().animation("Air"), true);
+    }
+    else if (m_player->getComponent<CState>().state == "ground")
+    {
+        m_player->addComponent<CAnimation>(m_game.assets().animation("Stand"), true);
     }
 
     // TODO: set the animation of the player based on its CState component
@@ -293,10 +375,9 @@ void Scene_Play::sAnimation()
     //       if the animation is not repeated, and it has ended, destroy the entity
 };
 
-void Scene_Play::onEnd(){
+void Scene_Play::onEnd()
+{
     m_game.changeScene("MENU", std::make_shared<Scene_Menu>(m_game));
-    // TODO: When the scene ends, change back to the MENU scene
-    //       use m_game.changeScene(correct params);
 };
 
 void Scene_Play::sRender()
