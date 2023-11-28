@@ -12,8 +12,8 @@ Texture     TexPipeS    images/mario/pipesmall.png
 Texture     TexPipeT    images/mario/pipetall.png
 Texture     TexCloudB   images/mario/cloudbig.png
 Texture     TexCloudS   images/mario/cloudsmall.png
-Texture     TexBush     images/mario/bush.png
-Texture     TexBushBig  images/mario/bushbig.png
+Texture     TexHill     images/mario/hill.png
+Texture     TexHillBig  images/mario/hillbig.png
 Texture     TexGround   images/mario/ground.png
 Texture     TexBlock    images/mario/block.png
 Texture     TexPole     images/mario/flagpole.png
@@ -32,8 +32,8 @@ Animation   PipeTall    TexPipeT    1   0
 Animation   PipeSmall   TexPipeS    1   0
 Animation   CloudBig    TexCloudB   1   0
 Animation   CloudSmall  TexCloudS   1   0
-Animation   Bush        TexBush     1   0
-Animation   BushBig     TexBushBig  1   0
+Animation   Hill        TexHill     1   0
+Animation   HillBig     TexHillBig  1   0
 Animation   Ground      TexGround   1   0
 Animation   Block       TexBlock    1   0
 Animation   Pole        TexPole     1   0

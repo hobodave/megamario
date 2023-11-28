@@ -24,7 +24,7 @@ void Scene_Menu::init()
     m_menuStrings.push_back("Level 2");
     m_menuStrings.push_back("Level 3");
 
-    m_levelPaths = { "assets/levels/level1.txt", "assets/levels/level2.txt", "assets/levels/level3.txt" };
+    m_levelPaths = { "levels/level1.txt", "levels/level2.txt", "levels/level3.txt" };
 
     m_menuText.setFont(m_game.assets().font("Tech"));
     m_menuText.setCharacterSize(24);
