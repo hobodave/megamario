@@ -229,9 +229,7 @@ void Scene_Play::sLifespan()
 
 void Scene_Play::sCollision()
 {
-    // TODO: Implment bullet / tile collisions
-    //       Destroy the tile if it has a Brick animation
-
+    // Check for bullet collisions
     for (auto bullet : m_entityManager.getEntities("bullet"))
     {
         // assume CBoundingBox exists
@@ -261,13 +259,25 @@ void Scene_Play::sCollision()
 
             if (tile->getComponent<CAnimation>().animation.name() == "Brick")
             {
-                tile->destroy();
+                tile->removeComponent<CBoundingBox>();
+                tile->addComponent<CAnimation>(m_game.assets().animation("Explosion"), true);
+                tile->addComponent<CState>("dead");
             }
         }
     }
 
     for (auto e : m_entityManager.getEntities("tile"))
     {
+        // Check for dead entities first
+        if (e->hasComponent<CState>() && e->getComponent<CState>().state == "dead")
+        {
+            if (e->getComponent<CAnimation>().animation.hasEnded())
+            {
+                e->destroy();
+            }
+            continue;
+        }
+
         if (e->hasComponent<CBoundingBox>())
         {
             auto& tileBox = e->getComponent<CBoundingBox>();

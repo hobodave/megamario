@@ -25,7 +25,7 @@ Animation   Run         TexRun      4  10
 Animation   Air         TexAir      1   0
 Animation   Bullet      TexBullet   1   0
 Animation   Buster      TexBuster   1   0
-Animation   Explosion   TexExplode 48   2
+Animation   Explosion   TexExplode 10   4
 Animation   Coin        TexCoin     6   5
 Animation   Question    TexQ        1   0
 Animation   Brick       TexBrick    1   0

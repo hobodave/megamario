@@ -56,6 +56,5 @@ sf::Sprite &Animation::sprite()
 
 bool Animation::hasEnded() const
 {
-    // TODO: detect when animation has ended (last frame was played) and return true
-    return false;
+    return m_currentFrame >= m_frameCount * m_speed;
 }
