@@ -288,49 +288,61 @@ void Scene_Play::sCollision()
 
             Vec2 prevOverlap = Physics::GetPreviousOverlap(m_player, e);
 
-            // Check for x-axis collision
-            if (overlap.x > 0)
+            // Handle X-axis collisions
+            // if player is to the left of tile
+            if (prevOverlap.y > 0 && playerTransform.pos.x < tileTransform.pos.x)
             {
-                // if player is to the left of tile
-                if (prevOverlap.y > 0 && playerTransform.pos.x < tileTransform.pos.x)
-                {
-                    // set player to be to the left of tile
-                    playerTransform.pos.x -= overlap.x;
-                }
-                // if player is to the right of tile
-                else if (prevOverlap.y > 0 && playerTransform.pos.x > tileTransform.pos.x)
-                {
-                    // set player to be to the right of tile
-                    playerTransform.pos.x += overlap.x;
-                }
+                // set player to be to the left of tile
+                playerTransform.pos.x -= overlap.x;
+            }
+            // if player is to the right of tile
+            else if (prevOverlap.y > 0 && playerTransform.pos.x > tileTransform.pos.x)
+            {
+                // set player to be to the right of tile
+                playerTransform.pos.x += overlap.x;
             }
 
-            // Check for y-axis collision
-            if (overlap.y > 0)
+            // Handle Y-axis collisions
+            // if player is above tile
+            if (prevOverlap.x > 0 && playerTransform.pos.y < tileTransform.pos.y)
             {
-                // if player is above tile
-                if (prevOverlap.x > 0 && playerTransform.pos.y < tileTransform.pos.y)
+                // set player to be on top of tile
+                playerTransform.pos.y -= overlap.y;
+                playerTransform.velocity.y = 0;
+                if (playerTransform.velocity.x == 0)
                 {
-                    // set player to be on top of tile
-                    playerTransform.pos.y -= overlap.y;
-                    playerTransform.velocity.y = 0;
-                    if (playerTransform.velocity.x == 0)
-                    {
-                        m_player->getComponent<CState>().state = "ground";
-                    }
-                    else
-                    {
-                        m_player->getComponent<CState>().state = "run";
-                    }
-
-                    m_player->getComponent<CInput>().canJump = true;
+                    m_player->getComponent<CState>().state = "ground";
                 }
-                // if player is below tile
-                else if (prevOverlap.x > 0 && playerTransform.pos.y > tileTransform.pos.y)
+                else
                 {
-                    // set player to be below tile
-                    playerTransform.pos.y += overlap.y;
-                    playerTransform.velocity.y = 0;
+                    m_player->getComponent<CState>().state = "run";
+                }
+
+                m_player->getComponent<CInput>().canJump = true;
+            }
+            // if player is below tile
+            else if (prevOverlap.x > 0 && playerTransform.pos.y > tileTransform.pos.y)
+            {
+                // set player to be below tile
+                playerTransform.pos.y += overlap.y;
+                playerTransform.velocity.y = 0;
+
+                // if this was a brick, destroy it
+                if (e->getComponent<CAnimation>().animation.name() == "Brick")
+                {
+                    e->removeComponent<CBoundingBox>();
+                    e->addComponent<CAnimation>(m_game.assets().animation("Explosion"), false);
+                }
+                // if it was a question, change the texture to TexQ2
+                else if (e->getComponent<CAnimation>().animation.name() == "Question")
+                {
+                    e->getComponent<CAnimation>().animation = m_game.assets().animation("Question2");
+
+                    // create entity above the question block to display coin animation
+                    auto coin = m_entityManager.addEntity("coin");
+                    coin->addComponent<CTransform>(Vec2{tileTransform.pos.x, tileTransform.pos.y - 64});
+                    coin->addComponent<CAnimation>(m_game.assets().animation("Coin"), false);
+                    coin->getComponent<CTransform>().scale = Vec2(0.33f, 0.33f);
                 }
             }
         }
