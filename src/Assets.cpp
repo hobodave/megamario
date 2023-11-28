@@ -1,9 +1,9 @@
 #include "Assets.hpp"
 #include <cassert>
 
-void Assets::loadFromFile(const std::string & path)
+void Assets::loadFromFile(const std::string & filePath)
 {
-    std::ifstream file(path);
+    std::ifstream file(filePath);
     std::string directive;
 
     while (file.good())
@@ -36,19 +36,19 @@ void Assets::loadFromFile(const std::string & path)
     }
 }
 
-void Assets::addTexture(const std::string & name, const std::string & path)
+void Assets::addTexture(const std::string & name, const std::string & filePath)
 {
     m_textures[name] = sf::Texture();
 
-    if (!m_textures[name].loadFromFile(path))
+    if (!m_textures[name].loadFromFile(filePath))
     {
-        std::cerr << "Failed to load texture: " << path << std::endl;
+        std::cerr << "Failed to load texture: " << filePath << std::endl;
         m_textures.erase(name);
     }
     else
     {
         m_textures[name].setSmooth(true);
-        std::cout << "Loaded texture: " << path << std::endl;
+        std::cout << "Loaded texture: " << filePath << std::endl;
     }
 }
 
@@ -74,18 +74,18 @@ const Animation & Assets::animation(const std::string & name) const
     return m_animations.at(name);
 }
 
-void Assets::addFont(const std::string & name, const std::string & path)
+void Assets::addFont(const std::string & name, const std::string & filePath)
 {
     m_fonts[name] = sf::Font();
 
-    if (!m_fonts[name].loadFromFile(path))
+    if (!m_fonts[name].loadFromFile(filePath))
     {
-        std::cerr << "Failed to load font: " << path << std::endl;
+        std::cerr << "Failed to load font: " << filePath << std::endl;
         m_fonts.erase(name);
     }
     else
     {
-        std::cout << "Loaded font: " << path << std::endl;
+        std::cout << "Loaded font: " << filePath << std::endl;
     }
 }
 

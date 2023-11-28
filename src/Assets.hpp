@@ -18,14 +18,14 @@ private:
     FontMap         m_fonts;
     AnimationMap    m_animations;
 
-    void addTexture(const std::string & name, const std::string & path);
+    void addTexture(const std::string & name, const std::string & filePath);
     void addAnimation(const std::string & name, const std::string & textureName, size_t frames, size_t speed);
-    void addFont(const std::string & name, const std::string & path);
+    void addFont(const std::string & name, const std::string & filePath);
 
 public:
     Assets() = default;
 
-    void loadFromFile(const std::string & path);
+    void loadFromFile(const std::string & filePath);
 
     const sf::Texture & texture(const std::string & name) const;
     const Animation & animation(const std::string & name) const;
