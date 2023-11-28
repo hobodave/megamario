@@ -1,6 +1,12 @@
 #include "EntityManager.hpp"
 #include <vector>
 
+EntityManager::~EntityManager()
+{
+    m_entities.clear();
+    m_entityMap.clear();
+}
+
 void EntityManager::update()
 {
     for (auto& entity : m_entitiesToAdd)
