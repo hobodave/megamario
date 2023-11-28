@@ -80,7 +80,7 @@ void Scene_Play::loadLevel(const std::string &filename)
             tile->addComponent<CAnimation>(m_game.assets().animation(name), true);
             tile->addComponent<CTransform>(gridToMidPixel(gridX, gridY, tile));
 
-            if (name == "Ground" || name == "Brick" || name == "Question")
+            if (name == "Ground" || name == "Brick" || name == "Question" || name == "Block")
             {
                 tile->addComponent<CBoundingBox>(Vec2(64, 64));
             }
