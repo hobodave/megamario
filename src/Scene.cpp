@@ -12,10 +12,7 @@ void Scene::setPaused(bool paused)
 
 void Scene::doAction(const Action& action)
 {
-    // if (m_actionMap.find(action) != m_actionMap.end())
-    // {
-    //     sDoAction(action);
-    // }
+    sDoAction(action);
 }
 
 void Scene::simulate(const size_t frameCount)

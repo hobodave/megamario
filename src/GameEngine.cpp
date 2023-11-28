@@ -17,8 +17,8 @@ void GameEngine::init(const std::string & path)
     m_window.create(sf::VideoMode(1280, 768), "Definitely Not Mario");
     m_window.setFramerateLimit(60);
 
-    // changeScene("MENU", std::make_shared<Scene_Menu>(*this));
-    changeScene("PLAY", std::make_shared<Scene_Play>(*this, "levels/level1.txt"));
+    changeScene("MENU", std::make_shared<Scene_Menu>(*this));
+    // changeScene("PLAY", std::make_shared<Scene_Play>(*this, "levels/level1.txt"));
 }
 
 std::shared_ptr<Scene> GameEngine::currentScene()
