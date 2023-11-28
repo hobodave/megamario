@@ -38,6 +38,6 @@ Animation   Block       TexBlock    1   0
 Animation   Pole        TexPole     1   0
 Animation   PoleTop     TexPoleTop  1   0
 Animation   Flag        TexFlag     1   0
-Font        Tech        fonts/Roboto-Light.ttf
+Font        Tech        fonts/PressStart2P-Regular.ttf
 Font        Mario       fonts/mario.ttf
 Font        Megaman     fonts/megaman.ttf
