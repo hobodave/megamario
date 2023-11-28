@@ -351,7 +351,7 @@ void Scene_Play::sRender()
             for (float x = nextGridX; x < rightX; x += m_gridSize.x)
             {
                 std::string xCell = std::to_string((int)x / (int)m_gridSize.x);
-                std::string yCell = std::to_string((int)y / (int)m_gridSize.y);
+                std::string yCell = std::to_string((int)(y-1) / (int)m_gridSize.y);
                 size_t previousSize = m_gridText.getCharacterSize();
                 m_gridText.setCharacterSize(6);
                 m_gridText.setString("(" + xCell + "," + yCell + ")");
