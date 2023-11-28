@@ -154,14 +154,16 @@ void Scene_Play::spawnBullet(std::shared_ptr<Entity> entity)
 void Scene_Play::update()
 {
     m_entityManager.update();
-    m_currentFrame++;
 
-    // TODO: implement pause functionality
+    if (!m_paused)
+    {
+        m_currentFrame++;
+        sMovement();
+        sLifespan();
+        sCollision();
+        sAnimation();
+    }
 
-    sMovement();
-    sLifespan();
-    sCollision();
-    sAnimation();
     sRender();
 }
 
