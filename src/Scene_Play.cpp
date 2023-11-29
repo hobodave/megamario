@@ -602,8 +602,13 @@ void Scene_Play::sRender()
             if (e->hasComponent<CAnimation>())
             {
                 auto &animation = e->getComponent<CAnimation>().animation;
+                float offset {0};
+                if (animation.name() == "Flag")
+                {
+                    offset = 32.0f;
+                }
                 animation.sprite().setRotation(transform.angle);
-                animation.sprite().setPosition(transform.pos.x, transform.pos.y);
+                animation.sprite().setPosition(transform.pos.x + offset, transform.pos.y);
                 animation.sprite().setScale(transform.scale.x, transform.scale.y);
                 m_game.window().draw(animation.sprite());
             }
