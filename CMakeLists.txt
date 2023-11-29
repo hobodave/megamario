@@ -35,6 +35,7 @@ add_executable(megamario ${SOURCES})
 
 target_include_directories(megamario PRIVATE ${SOURCE_DIR})
 target_link_libraries(megamario PRIVATE sfml-graphics)
+target_link_libraries(megamario PRIVATE sfml-audio)
 target_compile_features(megamario PRIVATE cxx_std_17)
 
 if(WIN32)

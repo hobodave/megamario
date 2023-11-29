@@ -48,3 +48,5 @@ Animation   Flag        TexFlag     1   0
 Font        Tech        fonts/PressStart2P-Regular.ttf
 Font        Mario       fonts/mario.ttf
 Font        Megaman     fonts/megaman.ttf
+Sound       Shoot       sounds/0033.wav
+Sound       JumpLand    sounds/0034.wav

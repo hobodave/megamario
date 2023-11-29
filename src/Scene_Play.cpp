@@ -140,6 +140,9 @@ void Scene_Play::spawnBullet(std::shared_ptr<Entity> entity)
     bullet->addComponent<CTransform>(bulletPosition, bulletVelocity);
     bullet->addComponent<CBoundingBox>(Vec2(16, 12));
     bullet->addComponent<CLifespan>(180, m_currentFrame);
+
+    m_sound.setBuffer(m_game.assets().sound("Shoot"));
+    m_sound.play();
 }
 
 void Scene_Play::update()

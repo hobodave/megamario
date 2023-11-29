@@ -29,6 +29,12 @@ void Assets::loadFromFile(const std::string & filePath)
             file >> name >> path;
             addFont(name, path);
         }
+        else if (directive == "Sound")
+        {
+            std::string name, path;
+            file >> name >> path;
+            addSound(name, path);
+        }
         else
         {
             std::cerr << "Unknown Asset Type: " << directive << std::endl;
@@ -97,4 +103,25 @@ const sf::Font & Assets::font(const std::string & name) const
 {
     assert(m_fonts.find(name) != m_fonts.end());
     return m_fonts.at(name);
+}
+
+void Assets::addSound(const std::string & name, const std::string & filePath)
+{
+    m_sounds[name] = sf::SoundBuffer();
+
+    if (!m_sounds[name].loadFromFile(filePath))
+    {
+        std::cerr << "Failed to load sound: " << filePath << std::endl;
+        m_sounds.erase(name);
+    }
+    else
+    {
+        std::cout << "Loaded sound: " << filePath << std::endl;
+    }
+}
+
+const sf::SoundBuffer & Assets::sound(const std::string & name) const
+{
+    assert(m_sounds.find(name) != m_sounds.end());
+    return m_sounds.at(name);
 }

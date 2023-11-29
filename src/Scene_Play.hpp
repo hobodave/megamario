@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 
 class Scene_Play : public Scene
 {
@@ -26,6 +27,7 @@ protected:
     bool                    m_drawGrid = false;
     const Vec2              m_gridSize { 64, 64 };
     sf::Text                m_gridText;
+    sf::Sound               m_sound;
 
     void init(const std::string& levelPath);
 
