@@ -1,9 +1,11 @@
 Texture     Missing     images/missing.png
-Texture     TexStand    images/megaman/stand64.png
-Texture     TexRun      images/megaman/run64.png
-Texture     TexAir      images/megaman/air64.png
+Texture     TexIdle     images/megaman/idle.png
+Texture     TexRun      images/megaman/run.png
+Texture     TexRunShoot images/megaman/runshoot.png
+Texture     TexAir      images/megaman/air.png
+Texture     TexAirShoot images/megaman/airshoot.png
 Texture     TexBullet   images/megaman/bullet.png
-Texture     TexBuster   images/megaman/buster.png
+Texture     TexShoot    images/megaman/shoot.png
 Texture     TexExplode  images/misc/explosion128.png
 Texture     TexCoin     images/misc/coinspin.png
 Texture     TexBrick    images/mario/brick.png
@@ -20,11 +22,13 @@ Texture     TexBlock    images/mario/block.png
 Texture     TexPole     images/mario/flagpole.png
 Texture     TexPoleTop  images/mario/flagtop.png
 Texture     TexFlag     images/mario/flag.png
-Animation   Stand       TexStand    1   0
-Animation   Run         TexRun      4  10
+Animation   Idle        TexIdle    12  20
+Animation   Run         TexRun      3  10
+Animation   RunShoot    TexRunShoot 4   8
 Animation   Air         TexAir      1   0
+Animation   AirShoot    TexAirShoot 1   0
 Animation   Bullet      TexBullet   1   0
-Animation   Buster      TexBuster   1   0
+Animation   Shoot       TexShoot    1   0
 Animation   Explosion   TexExplode 10   4
 Animation   Coin        TexCoin     6   5
 Animation   Question    TexQ        4   12

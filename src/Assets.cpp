@@ -70,7 +70,11 @@ void Assets::addAnimation(const std::string & name, const std::string & textureN
 
 const Animation & Assets::animation(const std::string & name) const
 {
-    assert(m_animations.find(name) != m_animations.end());
+    if (m_animations.find(name) == m_animations.end())
+    {
+        std::cerr << "Animation not found: " << name << std::endl;
+        assert(m_animations.find(name) != m_animations.end());
+    }
     return m_animations.at(name);
 }
 

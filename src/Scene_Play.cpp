@@ -113,29 +113,17 @@ void Scene_Play::loadLevel(const std::string &filename)
             spawnPlayer();
         }
     }
-
-    // NOTE: THIS IS INCREDIBLY IMPORTANT PLEASE READ THIS EXAMPLE
-    //       Components are now returned as references rather than pointers
-    //       If you do not specify a reference variable type, it will COPY the component
-    //       Here is an example:
-    //
-    //       This will COPY the transform into the variable 'transform1' - it is INCORRECT
-    //       auto transform1 = entity->getComponent<CTransform>();
-    //
-    //       This will REFERENCE the transform into the variable 'transform2' - it is CORRECT
-    //       auto& transform2 = entity->getComponent<CTransform>();
 }
 
 void Scene_Play::spawnPlayer()
 {
     m_player = m_entityManager.addEntity("player");
-    m_player->addComponent<CAnimation>(m_game.assets().animation("Stand"), true);
+    m_player->addComponent<CAnimation>(m_game.assets().animation("Idle"), true);
     m_player->addComponent<CTransform>(gridToMidPixel(m_playerConfig.X, m_playerConfig.Y, m_player));
-    // m_player->getComponent<CTransform>().scale = Vec2(0.75f, 0.75f);
     m_player->addComponent<CBoundingBox>(Vec2(m_playerConfig.CX, m_playerConfig.CY));
     m_player->addComponent<CGravity>(m_playerConfig.GRAVITY);
     m_player->addComponent<CInput>();
-    m_player->addComponent<CState>("ground");
+    m_player->addComponent<CState>("idle");
 }
 
 void Scene_Play::spawnBullet(std::shared_ptr<Entity> entity)
@@ -145,8 +133,11 @@ void Scene_Play::spawnBullet(std::shared_ptr<Entity> entity)
     float bulletDirection = entity->getComponent<CTransform>().scale.x < 0 ? -1.0f : 1.0f;
     Vec2 bulletVelocity = Vec2(bulletDirection * 10.0f, 0.0f);
 
+    Vec2 entityPosition = entity->getComponent<CTransform>().pos;
+    Vec2 bulletPosition = Vec2{entityPosition.x + (bulletDirection * 32.0f), entityPosition.y + 6.0f};
+
     bullet->addComponent<CAnimation>(m_game.assets().animation(m_playerConfig.WEAPON), true);
-    bullet->addComponent<CTransform>(entity->getComponent<CTransform>().pos, bulletVelocity);
+    bullet->addComponent<CTransform>(bulletPosition, bulletVelocity);
     bullet->addComponent<CBoundingBox>(Vec2(16, 12));
     bullet->addComponent<CLifespan>(180, m_currentFrame);
 }
@@ -311,11 +302,25 @@ void Scene_Play::sCollision()
                 playerTransform.velocity.y = 0;
                 if (playerTransform.velocity.x == 0)
                 {
-                    m_player->getComponent<CState>().state = "ground";
+                    if (m_player->getComponent<CInput>().shoot)
+                    {
+                        m_player->getComponent<CState>().state = "shoot";
+                    }
+                    else
+                    {
+                        m_player->getComponent<CState>().state = "idle";
+                    }
                 }
                 else
                 {
-                    m_player->getComponent<CState>().state = "run";
+                    if (m_player->getComponent<CInput>().shoot)
+                    {
+                        m_player->getComponent<CState>().state = "runshoot";
+                    }
+                    else
+                    {
+                        m_player->getComponent<CState>().state = "run";
+                    }
                 }
 
                 m_player->getComponent<CInput>().canJump = true;
@@ -365,6 +370,7 @@ void Scene_Play::sCollision()
 void Scene_Play::sDoAction(const Action &action)
 {
     auto& playerInput = m_player->getComponent<CInput>();
+    auto& currentState = m_player->getComponent<CState>();
 
     if (action.type() == "START")
     {
@@ -391,12 +397,20 @@ void Scene_Play::sDoAction(const Action &action)
         else if (action.name() == "LEFT")
         {
             playerInput.left = true;
-            m_player->getComponent<CState>().state = "run";
+            // if not idle, set state to run
+            if (currentState.state == "idle")
+            {
+                currentState.state = "run";
+            }
         }
         else if (action.name() == "RIGHT")
         {
             playerInput.right = true;
-            m_player->getComponent<CState>().state = "run";
+            // if not idle, set state to run
+            if (currentState.state == "idle")
+            {
+                currentState.state = "run";
+            }
         }
         else if (action.name() == "UP")
         {
@@ -404,7 +418,8 @@ void Scene_Play::sDoAction(const Action &action)
             {
                 playerInput.up = true;
                 playerInput.canJump = false;
-                m_player->getComponent<CState>().state = "air";
+                // TODO: Should we check for only idle or run first?
+                currentState.state = "air";
             } else {
                 playerInput.up = false;
             }
@@ -420,6 +435,19 @@ void Scene_Play::sDoAction(const Action &action)
                 playerInput.shoot = true;
                 playerInput.canShoot = false;
                 spawnBullet(m_player); // Does this belong here or in sMovement?
+
+                if (currentState.state == "idle")
+                {
+                    currentState.state = "shoot";
+                }
+                else if (currentState.state == "run")
+                {
+                    currentState.state = "runshoot";
+                }
+                else if (currentState.state == "air")
+                {
+                    currentState.state = "airshoot";
+                }
             }
         }
     }
@@ -445,26 +473,63 @@ void Scene_Play::sDoAction(const Action &action)
         {
             playerInput.shoot = false;
             playerInput.canShoot = true;
+
+            if (currentState.state == "shoot")
+            {
+                currentState.state = "idle";
+            }
+            else if (currentState.state == "runshoot")
+            {
+                currentState.state = "run";
+            }
+            else if (currentState.state == "airshoot")
+            {
+                currentState.state = "air";
+            }
         }
     }
 }
 
 void Scene_Play::sAnimation()
 {
-    if (m_player->getComponent<CState>().state == "air")
+    auto& playerState = m_player->getComponent<CState>();
+    auto& currentAnimation = m_player->getComponent<CAnimation>();
+
+    if (playerState.state == "air")
     {
         m_player->addComponent<CAnimation>(m_game.assets().animation("Air"), true);
     }
-    else if (m_player->getComponent<CState>().state == "run")
+    else if (playerState.state == "airshoot")
     {
-        if (m_player->getComponent<CAnimation>().animation.name() != "Run")
+        m_player->addComponent<CAnimation>(m_game.assets().animation("AirShoot"), true);
+    }
+    else if (playerState.state == "run")
+    {
+        if (currentAnimation.animation.name() != "Run")
         {
             m_player->addComponent<CAnimation>(m_game.assets().animation("Run"), true);
         }
     }
-    else if (m_player->getComponent<CState>().state == "ground")
+    else if (playerState.state == "runshoot")
     {
-        m_player->addComponent<CAnimation>(m_game.assets().animation("Stand"), true);
+        if (currentAnimation.animation.name() != "RunShoot")
+        {
+            m_player->addComponent<CAnimation>(m_game.assets().animation("RunShoot"), true);
+        }
+    }
+    else if (playerState.state == "shoot")
+    {
+        if (currentAnimation.animation.name() != "Shoot")
+        {
+            m_player->addComponent<CAnimation>(m_game.assets().animation("Shoot"), true);
+        }
+    }
+    else if (playerState.state == "idle")
+    {
+        if (currentAnimation.animation.name() != "Idle")
+        {
+            m_player->addComponent<CAnimation>(m_game.assets().animation("Idle"), true);
+        }
     }
 
     for (auto e : m_entityManager.getEntities())
