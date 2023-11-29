@@ -168,6 +168,7 @@ void Scene_Play::sMovement()
         auto& entityTransform = e->getComponent<CTransform>();
         entityTransform.prevPos = entityTransform.pos;
 
+        // Only the player has this component
         if (e->hasComponent<CInput>())
         {
             auto& input = e->getComponent<CInput>();
@@ -185,6 +186,15 @@ void Scene_Play::sMovement()
             else if (input.up)
             {
                 entityTransform.velocity.y -= m_playerConfig.JUMP;
+            }
+        }
+
+        // Check for vertical velocity and update state to air if necessary
+        if (entityTransform.velocity.y != 0)
+        {
+            if (e->getComponent<CState>().state != "air" && e->getComponent<CState>().state != "airshoot")
+            {
+                e->getComponent<CState>().state = "air";
             }
         }
 
