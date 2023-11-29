@@ -350,6 +350,8 @@ void Scene_Play::sCollision()
                 {
                     e->removeComponent<CBoundingBox>();
                     e->addComponent<CAnimation>(m_game.assets().animation("Explosion"), false);
+                    m_sound.setBuffer(m_game.assets().sound("BreakBlock"));
+                    m_sound.play();
                 }
                 // if it was a question, change the texture to TexQ2
                 else if (e->getComponent<CAnimation>().animation.name() == "Question")
@@ -361,6 +363,8 @@ void Scene_Play::sCollision()
                     coin->addComponent<CTransform>(Vec2{tileTransform.pos.x, tileTransform.pos.y - 64});
                     coin->addComponent<CAnimation>(m_game.assets().animation("Coin"), false);
                     coin->getComponent<CTransform>().scale = Vec2(0.33f, 0.33f);
+                    m_sound.setBuffer(m_game.assets().sound("Coin"));
+                    m_sound.play();
                 }
             }
         }
@@ -402,6 +406,8 @@ void Scene_Play::sDoAction(const Action &action)
         else if (action.name() == "PAUSE")
         {
             setPaused(!m_paused);
+            m_sound.setBuffer(m_game.assets().sound("Pause"));
+            m_sound.play();
         }
         else if (action.name() == "QUIT")
         {

@@ -35,6 +35,7 @@ void Scene_Menu::init()
 
 void Scene_Menu::update()
 {
+    m_currentFrame++;
     sRender();
 }
 
@@ -44,26 +45,33 @@ void Scene_Menu::onEnd()
 
 void Scene_Menu::sDoAction(const Action& action)
 {
-    if (action.name() == "UP")
+    if (action.type() == "START")
     {
-        m_selectedMenuIndex = (m_selectedMenuIndex + m_menuStrings.size() - 1) % m_menuStrings.size();
-    }
-    else if (action.name() == "DOWN")
-    {
-        m_selectedMenuIndex = (m_selectedMenuIndex + 1) % m_menuStrings.size();
-    }
-    else if (action.name() == "SELECT")
-    {
-        m_game.changeScene("PLAY", std::make_shared<Scene_Play>(m_game, m_levelPaths[m_selectedMenuIndex]));
-    }
-    else if (action.name() == "QUIT")
-    {
-        m_game.quit();
+        if (action.name() == "UP")
+        {
+            m_selectedMenuIndex = (m_selectedMenuIndex + m_menuStrings.size() - 1) % m_menuStrings.size();
+        }
+        else if (action.name() == "DOWN")
+        {
+            m_selectedMenuIndex = (m_selectedMenuIndex + 1) % m_menuStrings.size();
+        }
+        else if (action.name() == "SELECT")
+        {
+            m_game.changeScene("PLAY", std::make_shared<Scene_Play>(m_game, m_levelPaths[m_selectedMenuIndex]));
+        }
+        else if (action.name() == "QUIT")
+        {
+            m_game.quit();
+        }
     }
 }
 
 void Scene_Menu::sRender()
 {
+    sf::View view = m_game.window().getView();
+    view.setCenter(m_game.window().getSize().x / 2, m_game.window().getSize().y / 2);
+    m_game.window().setView(view);
+
     m_game.window().clear(sf::Color(111, 111, 255));
     m_menuText.setString(m_title);
     m_menuText.setPosition(20, 20);

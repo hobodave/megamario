@@ -50,3 +50,6 @@ Font        Mario       fonts/mario.ttf
 Font        Megaman     fonts/megaman.ttf
 Sound       Shoot       sounds/0033.wav
 Sound       JumpLand    sounds/0034.wav
+Sound       Coin        sounds/coin.wav
+Sound       BreakBlock  sounds/breakblock.wav
+Sound       Pause       sounds/pause.wav
