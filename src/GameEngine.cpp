@@ -86,13 +86,50 @@ void GameEngine::sUserInput()
             // look up the action and send the action to the scene
             currentScene()->doAction(Action(currentScene()->actionMap().at(event.key.code), actionType));
         }
+
+        auto mousePos = sf::Mouse::getPosition(m_window);
+        Vec2 mousePosition = Vec2(mousePos.x, mousePos.y);
+
+        if (event.type == sf::Event::MouseButtonPressed)
+        {
+            switch (event.mouseButton.button)
+            {
+                case sf::Mouse::Left:   { currentScene()->doAction(Action("LEFT_CLICK", "START", mousePosition)); break; }
+                case sf::Mouse::Middle: { currentScene()->doAction(Action("MIDDLE_CLICK", "START", mousePosition)); break; }
+                case sf::Mouse::Right:  { currentScene()->doAction(Action("RIGHT_CLICK", "START", mousePosition)); break; }
+                default: break;
+            }
+        }
+
+        if (event.type == sf::Event::MouseButtonReleased)
+        {
+            switch (event.mouseButton.button)
+            {
+                case sf::Mouse::Left:   { currentScene()->doAction(Action("LEFT_CLICK", "END", mousePosition)); break; }
+                case sf::Mouse::Middle: { currentScene()->doAction(Action("MIDDLE_CLICK", "END", mousePosition)); break; }
+                case sf::Mouse::Right:  { currentScene()->doAction(Action("RIGHT_CLICK", "END", mousePosition)); break; }
+                default: break;
+            }
+        }
+
+        if (event.type == sf::Event::MouseMoved)
+        {
+            currentScene()->doAction(Action("MOUSE_MOVE", "START", Vec2(event.mouseMove.x, event.mouseMove.y)));
+        }
     }
 }
 
 void GameEngine::changeScene(const std::string & sceneName, std::shared_ptr<Scene> scene, bool endCurrentScene)
 {
-    m_sceneMap[sceneName] = scene;
-    m_currentScene = sceneName;
+    if (scene)
+    {
+        m_sceneMap[sceneName] = scene;
+        m_currentScene = sceneName;
+    }
+    else
+    {
+        std::cout << "ERROR: Scene '" << sceneName << "' does not exist." << std::endl;
+    }
 }
 
 void GameEngine::quit()
