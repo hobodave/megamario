@@ -90,6 +90,7 @@ void Scene_Play::loadLevel(const std::string &filename)
             auto tile = m_entityManager.addEntity("tile");
             tile->addComponent<CAnimation>(m_game.assets().animation(name), true);
             tile->addComponent<CTransform>(gridToMidPixel(gridX, gridY, tile));
+            tile->addComponent<CDraggable>();
 
             if (name == "Ground" || name == "Brick" || name == "Question" || name == "Block")
             {
@@ -166,6 +167,7 @@ void Scene_Play::update()
     if (!m_paused)
     {
         m_currentFrame++;
+        sDragAndDrop();
         sMovement();
         sLifespan();
         sCollision();
@@ -174,7 +176,6 @@ void Scene_Play::update()
 
     sRender();
 }
-
 
 void Scene_Play::sDoAction(const Action &action)
 {
@@ -199,11 +200,16 @@ void Scene_Play::sDoAction(const Action &action)
             {
                 auto worldPos = windowToWorld(action.position());
 
-                if (IsInside(worldPos, e))
+                if (e->hasComponent<CDraggable>() && IsInside(worldPos, e))
                 {
                     std::cout << "Clicked on entity: " << e->getComponent<CAnimation>().animation.name() << std::endl;
+                    e->getComponent<CDraggable>().dragging = !e->getComponent<CDraggable>().dragging;
                 }
             }
+        }
+        else if (action.name() == "MOUSE_MOVE")
+        {
+            m_mousePos = action.position();
         }
     }
     else if (action.type() == "END")
@@ -223,6 +229,18 @@ void Scene_Play::sDoAction(const Action &action)
         else if (action.name() == "LEFT") { playerInput.left = false; }
         else if (action.name() == "RIGHT") { playerInput.right = false; }
         else if (action.name() == "SHOOT") { playerInput.shoot = false; playerInput.canShoot = true; }
+    }
+}
+
+void Scene_Play::sDragAndDrop()
+{
+    for (auto e : m_entityManager.getEntities())
+    {
+        if (e->hasComponent<CDraggable>() && e->getComponent<CDraggable>().dragging)
+        {
+            auto& transform = e->getComponent<CTransform>();
+            transform.pos = windowToWorld(m_mousePos);
+        }
     }
 }
 

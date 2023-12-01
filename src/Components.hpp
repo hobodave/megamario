@@ -9,6 +9,13 @@ public:
     bool has = false;
 };
 
+class CDraggable : public Component
+{
+public:
+    bool dragging = false;
+    CDraggable() = default;
+};
+
 class CTransform : public Component
 {
 public:

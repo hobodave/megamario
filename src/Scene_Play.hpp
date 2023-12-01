@@ -48,6 +48,7 @@ protected:
 
     void sDoAction(const Action& action);
 
+    void sDragAndDrop();
     void sMovement();
     void sLifespan();
     void sAnimation();
