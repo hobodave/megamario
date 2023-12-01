@@ -128,7 +128,12 @@ void GameEngine::changeScene(const std::string & sceneName, std::shared_ptr<Scen
     }
     else
     {
-        std::cout << "ERROR: Scene '" << sceneName << "' does not exist." << std::endl;
+        if (endCurrentScene)
+        {
+            m_sceneMap.erase(m_currentScene);
+        }
+
+        m_currentScene = sceneName;
     }
 }
 
