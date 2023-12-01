@@ -49,6 +49,16 @@ public:
     bool canJump    { true };
 
     CInput() = default;
+    std::string toString() const
+    {
+        return "U: " + std::to_string(up) +
+        " D: " + std::to_string(down) +
+        " L: " + std::to_string(left) +
+        " R: " + std::to_string(right) +
+        " S: " + std::to_string(shoot) +
+        " CJ: " + std::to_string(canJump) +
+        " CS: " + std::to_string(canShoot);
+    }
 };
 
 class CBoundingBox : public Component
