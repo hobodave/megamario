@@ -27,29 +27,34 @@ protected:
     bool                    m_drawGrid = false;
     const Vec2              m_gridSize { 64, 64 };
     sf::Text                m_gridText;
-    sf::Sound               m_sound;
+    size_t                  m_jumpFrame = 0;
+
+    Vec2                    m_mousePos;
+    sf::CircleShape         m_mouseShape;
 
     void init(const std::string& levelPath);
 
     void loadLevel(const std::string& filename);
 
     void update();
+    void onEnd();
     void spawnPlayer();
     void spawnBullet(std::shared_ptr<Entity> entity);
+    // void hitBlock(std::shared_ptr<Entity> entity);
 
-    void sMovement();
-    void sLifespan();
-    void sCollision();
-    void sAnimation();
-    void sDoAction(const Action& action);
-
-    void sRender();
-    void onEnd();
-public:
-
-    Scene_Play(GameEngine & gameEngine, const std::string& levelPath);
+    Vec2 windowToWorld(const Vec2& window) const;
 
     Vec2 gridToMidPixel(float gridX, float gridY, std::shared_ptr<Entity> entity);
 
+    void sDoAction(const Action& action);
 
+    void sMovement();
+    void sLifespan();
+    void sAnimation();
+    void sCollision();
+    void sRender();
+
+public:
+
+    Scene_Play(GameEngine & gameEngine, const std::string& levelPath);
 };

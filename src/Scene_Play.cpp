@@ -1,5 +1,4 @@
 #include "Scene_Play.hpp"
-#include "Scene_Menu.hpp"
 #include "Physics.hpp"
 #include "Assets.hpp"
 #include "GameEngine.hpp"
@@ -9,6 +8,17 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+
+bool IsInside(Vec2 pos, std::shared_ptr<Entity> e)
+{
+    auto ePos = e->getComponent<CTransform>().pos;
+    auto size = e->getComponent<CAnimation>().animation.size();
+
+    float dx = std::abs(pos.x - ePos.x);
+    float dy = std::abs(pos.y - ePos.y);
+
+    return (dx <= size.x / 2.0) && (dy <= size.y / 2.0);
+}
 
 Scene_Play::Scene_Play(GameEngine & gameEngine, const std::string &levelPath)
     : Scene(gameEngine), m_levelPath(levelPath)
@@ -87,7 +97,11 @@ void Scene_Play::loadLevel(const std::string &filename)
             }
             else if (name == "PipeSmall")
             {
-                tile->addComponent<CBoundingBox>(Vec2(128, 138));
+                tile->addComponent<CBoundingBox>(Vec2(128, 128));
+            }
+            else if (name == "PipeTall")
+            {
+                tile->addComponent<CBoundingBox>(Vec2(128, 192));
             }
         }
         else if (directive == "Player")
@@ -161,8 +175,85 @@ void Scene_Play::update()
     sRender();
 }
 
+
+void Scene_Play::sDoAction(const Action &action)
+{
+    auto& playerInput = m_player->getComponent<CInput>();
+    auto& currentState = m_player->getComponent<CState>();
+
+    if (action.type() == "START")
+    {
+        if (action.name() == "LEFT") { playerInput.left = true; }
+        else if (action.name() == "RIGHT") { playerInput.right = true; }
+        else if (action.name() == "UP") { playerInput.up = true; }
+        else if (action.name() == "DOWN") { playerInput.down = true; }
+        else if (action.name() == "SHOOT") { playerInput.shoot = true; }
+        else if (action.name() == "TOGGLE_TEXTURES") { m_drawTextures = !m_drawTextures; }
+        else if (action.name() == "TOGGLE_COLLISION") { m_drawCollision = !m_drawCollision; }
+        else if (action.name() == "TOGGLE_GRID") { m_drawGrid = !m_drawGrid; }
+        else if (action.name() == "PAUSE") { setPaused(!m_paused); }
+        else if (action.name() == "QUIT") { onEnd(); }
+        else if (action.name() == "LEFT_CLICK")
+        {
+            for (auto e : m_entityManager.getEntities())
+            {
+                auto worldPos = windowToWorld(action.position());
+
+                if (IsInside(worldPos, e))
+                {
+                    std::cout << "Clicked on entity: " << e->getComponent<CAnimation>().animation.name() << std::endl;
+                }
+            }
+        }
+    }
+    else if (action.type() == "END")
+    {
+        auto& playerTransform = m_player->getComponent<CTransform>();
+
+        if (action.name() == "UP")
+        {
+            if (playerTransform.velocity.y < 0)
+            {
+                playerTransform.velocity.y = 0;
+            }
+            playerInput.up = false;
+            playerInput.canJump = true;
+        }
+        else if (action.name() == "DOWN") { playerInput.down = false; }
+        else if (action.name() == "LEFT") { playerInput.left = false; }
+        else if (action.name() == "RIGHT") { playerInput.right = false; }
+        else if (action.name() == "SHOOT") { playerInput.shoot = false; playerInput.canShoot = true; }
+    }
+}
+
 void Scene_Play::sMovement()
 {
+    auto& playerInput = m_player->getComponent<CInput>();
+    auto& currentState = m_player->getComponent<CState>();
+
+    if (playerInput.left || playerInput.right)
+    {
+        // if not idle, set state to run
+        if (currentState.state == "idle") { currentState.state = "run"; }
+    }
+
+    if (playerInput.up && playerInput.canJump)
+    {
+        playerInput.canJump = false;
+        currentState.state = "air";
+        m_jumpFrame = m_currentFrame;
+    }
+
+    if (playerInput.shoot && playerInput.canShoot)
+    {
+        playerInput.canShoot = false;
+        spawnBullet(m_player);
+
+        if (currentState.state == "idle") { currentState.state = "shoot"; }
+        else if (currentState.state == "run") { currentState.state = "runshoot"; }
+        else if (currentState.state == "air") { currentState.state = "airshoot"; }
+    }
+
     auto& playerTransform = m_player->getComponent<CTransform>();
     playerTransform.velocity.x = 0;
 
@@ -176,28 +267,32 @@ void Scene_Play::sMovement()
         {
             auto& input = e->getComponent<CInput>();
 
+            if (input.up && ((m_currentFrame - m_jumpFrame) < 10))
+            {
+                entityTransform.velocity.y -= m_playerConfig.JUMP;
+            }
+
             if (input.left)
             {
                 entityTransform.velocity.x -= m_playerConfig.SPEED;
                 entityTransform.scale.x = -1;
             }
-            else if (input.right)
+
+            if (input.right)
             {
                 entityTransform.velocity.x += m_playerConfig.SPEED;
                 entityTransform.scale.x = 1;
             }
-            else if (input.up)
-            {
-                entityTransform.velocity.y -= m_playerConfig.JUMP;
-            }
         }
 
         // Check for vertical velocity and update state to air if necessary
+        // Must be done before gravity is applied
         if (entityTransform.velocity.y != 0)
         {
             if (e->getComponent<CState>().state != "air" && e->getComponent<CState>().state != "airshoot")
             {
                 e->getComponent<CState>().state = "air";
+                e->getComponent<CInput>().canJump = false;
             }
         }
 
@@ -384,131 +479,6 @@ void Scene_Play::sCollision()
     }
 }
 
-void Scene_Play::sDoAction(const Action &action)
-{
-    auto& playerInput = m_player->getComponent<CInput>();
-    auto& currentState = m_player->getComponent<CState>();
-
-    if (action.type() == "START")
-    {
-        if (action.name() == "TOGGLE_TEXTURES")
-        {
-            m_drawTextures = !m_drawTextures;
-        }
-        else if (action.name() == "TOGGLE_COLLISION")
-        {
-            m_drawCollision = !m_drawCollision;
-        }
-        else if (action.name() == "TOGGLE_GRID")
-        {
-            m_drawGrid = !m_drawGrid;
-        }
-        else if (action.name() == "PAUSE")
-        {
-            setPaused(!m_paused);
-            m_sound.setBuffer(m_game.assets().sound("Pause"));
-            m_sound.play();
-        }
-        else if (action.name() == "QUIT")
-        {
-            onEnd();
-        }
-        else if (action.name() == "LEFT")
-        {
-            playerInput.left = true;
-            // if not idle, set state to run
-            if (currentState.state == "idle")
-            {
-                currentState.state = "run";
-            }
-        }
-        else if (action.name() == "RIGHT")
-        {
-            playerInput.right = true;
-            // if not idle, set state to run
-            if (currentState.state == "idle")
-            {
-                currentState.state = "run";
-            }
-        }
-        else if (action.name() == "UP")
-        {
-            if (playerInput.canJump)
-            {
-                playerInput.up = true;
-                playerInput.canJump = false;
-                // TODO: Should we check for only idle or run first?
-                currentState.state = "air";
-            } else {
-                playerInput.up = false;
-            }
-        }
-        else if (action.name() == "DOWN")
-        {
-            playerInput.down = true;
-        }
-        else if (action.name() == "SHOOT")
-        {
-            if (playerInput.canShoot)
-            {
-                playerInput.shoot = true;
-                playerInput.canShoot = false;
-                spawnBullet(m_player); // Does this belong here or in sMovement?
-
-                if (currentState.state == "idle")
-                {
-                    currentState.state = "shoot";
-                }
-                else if (currentState.state == "run")
-                {
-                    currentState.state = "runshoot";
-                }
-                else if (currentState.state == "air")
-                {
-                    currentState.state = "airshoot";
-                }
-            }
-        }
-    }
-    else if (action.type() == "END")
-    {
-        if (action.name() == "UP")
-        {
-            playerInput.up = false;
-        }
-        else if (action.name() == "DOWN")
-        {
-            playerInput.down = false;
-        }
-        else if (action.name() == "LEFT")
-        {
-            playerInput.left = false;
-        }
-        else if (action.name() == "RIGHT")
-        {
-            playerInput.right = false;
-        }
-        else if (action.name() == "SHOOT")
-        {
-            playerInput.shoot = false;
-            playerInput.canShoot = true;
-
-            if (currentState.state == "shoot")
-            {
-                currentState.state = "idle";
-            }
-            else if (currentState.state == "runshoot")
-            {
-                currentState.state = "run";
-            }
-            else if (currentState.state == "airshoot")
-            {
-                currentState.state = "air";
-            }
-        }
-    }
-}
-
 void Scene_Play::sAnimation()
 {
     auto& playerState = m_player->getComponent<CState>();
@@ -566,11 +536,6 @@ void Scene_Play::sAnimation()
             e->destroy();
         }
     }
-};
-
-void Scene_Play::onEnd()
-{
-    m_game.changeScene("MENU", std::make_shared<Scene_Menu>(m_game));
 };
 
 void Scene_Play::sRender()
@@ -680,5 +645,28 @@ void Scene_Play::sRender()
         m_gridText.setCharacterSize(previousSize);
     }
 
+    m_mouseShape.setFillColor(sf::Color::Red);
+    m_mouseShape.setRadius(4);
+    m_mouseShape.setOrigin(2, 2);
+    Vec2 worldPosition = windowToWorld(m_mousePos);
+    m_mouseShape.setPosition(worldPosition.x, worldPosition.y);
+    m_game.window().draw(m_mouseShape);
+
     m_game.window().display();
-};
+}
+
+Vec2 Scene_Play::windowToWorld(const Vec2& window) const
+{
+    sf::View view = m_game.window().getView();
+    Vec2 viewCenter = Vec2(view.getCenter().x, m_game.window().getSize().y - view.getCenter().y);
+    Vec2 viewSize = Vec2(view.getSize().x, view.getSize().y);
+    Vec2 viewTopLeft = viewCenter - viewSize / 2.0;
+
+    return Vec2(window.x + viewTopLeft.x, window.y + viewTopLeft.y);
+}
+
+void Scene_Play::onEnd()
+{
+    m_hasEnded = true;
+    m_game.changeScene("MENU", nullptr, true);
+}

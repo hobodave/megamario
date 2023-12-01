@@ -4,6 +4,7 @@
 #include "EntityManager.hpp"
 #include "GameEngine.hpp"
 
+#include <SFML/Audio.hpp>
 #include <memory>
 
 class GameEngine;
@@ -19,6 +20,8 @@ protected:
     bool                m_paused = false;
     bool                m_hasEnded = false;
     size_t              m_currentFrame = 0;
+    sf::Sound           m_sound;
+
 
     virtual void onEnd() = 0;
     void setPaused(bool paused);

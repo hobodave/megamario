@@ -8,6 +8,8 @@ Scene::Scene(GameEngine & gameEngine)
 void Scene::setPaused(bool paused)
 {
     m_paused = paused;
+    m_sound.setBuffer(m_game.assets().sound("Pause"));
+    m_sound.play();
 }
 
 void Scene::doAction(const Action& action)
